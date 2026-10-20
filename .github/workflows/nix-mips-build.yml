@@ -20,7 +20,8 @@ jobs:
 
       - name: Build flake package
         run: |
-          nix develop --command bash -c "GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 go build -ldflags='-s -w' -o newt_linux_mipsle ."
+          nix develop --command bash -c "GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 go build -trimpath -tags='netgo,osusergo' -ldflags='-s -w' -o newt_linux_mipsle ."
+          nix shell nixpkgs#upx --command upx --best --lzma newt_linux_mipsle
           
       - name: Upload compiled binary
         uses: actions/upload-artifact@v4

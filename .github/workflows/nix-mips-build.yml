@@ -7,6 +7,9 @@ on:
       - go.mod
       - go.sum
 
+permissions:
+  contents: write
+
 jobs:
   nix-build:
     runs-on: ubuntu-latest
@@ -20,11 +23,15 @@ jobs:
 
       - name: Build flake package
         run: |
-          nix develop --command bash -c "GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 go build -trimpath -tags='netgo,osusergo' -ldflags='-s -w' -o newt_linux_mipsle ."
-          nix shell nixpkgs#upx --command upx --best --lzma newt_linux_mipsle
-          
-      - name: Upload compiled binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: newt-wsm20-binary
-          path: newt_linux_mipsle
+          nix develop --command bash -c "GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 go build -trimpath -tags='netgo,osusergo' -ldflags='-s -w' -o newt ."
+          nix shell nixpkgs#upx --command upx --best --lzma newt
+
+      - name: Create release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${{ github.run_number }}" newt \
+            --target "$GITHUB_SHA" \
+            --title "Build ${{ github.run_number }}" \
+            --notes "Newt mipsle softfloat"
